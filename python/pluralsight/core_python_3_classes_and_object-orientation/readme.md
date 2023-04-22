@@ -1,0 +1,1 @@
+This folder contains follow along exercises from the Pluralsight course 'Python 3: Classes and object orientation' by Robert Smallshire, and Austin Bingham.
