@@ -101,7 +101,7 @@ class Flight:
         """
         from_row, from_letter = self._parse_seat(from_seat)
         if self._seating[from_row][from_letter] is None:
-            raise ValueError(f"No passsanger to relocate in seat {to_seat}.")
+            raise ValueError(f"No passsanger to relocate in seat {from_seat}.")
         
         to_row, to_letter = self._parse_seat(to_seat)
         if self._seating[to_row][to_letter] is not None:
@@ -109,33 +109,107 @@ class Flight:
         
         self._seating[to_row][to_letter] = self._seating[from_row][from_letter]
         self._seating[from_row][from_letter] = None
+
+
+    def num_available_seats(self):
+        # available_seats = 0
+        # for row in self._seating[1:]:
+        #     available_seats += list(row.values()).count(None)
+        # return available_seats
+
+        # OR we can use the below approach mentioned in the course
+        return sum(sum(1 for v in row.values() if v is None) 
+                   for row in self._seating 
+                   if row is not None)
+    
+    # This function accepts another function to print boarding cards.
+    # This mthod can accept any function of the specified format. However, We will use console_card_printer().
+    # Polymorphism: Using objects of different types thorugh a uniform interface. In python it applies to both functions as well  as more complex types.
+    # Polymorphism in python is achieved through Duck-Typing.
+    def make_boarding_cards(self, card_printer):
+        for passenger, seat in sorted(self._passenger_seats()):
+            card_printer(passenger, seat, self.number(), self.aircraft_model())
+
+    def _passenger_seats(self):     # This is a generator funtion
+        """An iterable series of passenger seating locations."""
+        row_numbers, seat_letters = self._aircraft.seating_plan()
+        for row in row_numbers:
+            for letter in seat_letters:
+                passenger = self._seating[row][letter]
+                if passenger is not None:
+                    yield (passenger, f"{row}{letter}")
     
 class Aircraft:
 
-    def __init__(self, registration, model,  num_rows, num_seats_per_row):
+    def __init__(self, registration):
         self._registration  = registration
-        self._model = model
-        self._num_rows = num_rows
-        self._num_seats_per_row = num_seats_per_row
 
     def registration(self):
         return self._registration
     
+    def num_seats(self):
+        rows, row_seats = self.seating_plan()
+        return len(rows) * len(row_seats)
+    
+# Creating seperate aircrafts and demonstrating inheritance.
+class AirbusA319(Aircraft):
+    
     def model(self):
-        return self._model
+        return "Airbus A319"
     
     def seating_plan(self):
-        return (range(1, self._num_rows + 1),
-                "ABCDEFGHJK"[:self._num_seats_per_row])
+        return range(1, 23), "ABCDEF"
     
-# Convenience method
-def make_flight():
-    flight = Flight('BA758', Aircraft('G-EUPT', 'Airbus A319', num_rows=22, num_seats_per_row=6))
-    flight.allocate_seat('12A', 'Guido van Rossum')
-    flight.allocate_seat('15F', 'Bjarne Stroustrup')
-    flight.allocate_seat('15E', 'Anders, Hajlsberg')
-    flight.allocate_seat('1C', 'John McCarthy')
-    flight.allocate_seat('1D', 'Rich Hickey')
 
-    return flight
+class Boeing777(Aircraft):
     
+    def model(self):
+        return "Boeing777"
+    
+    def seating_plan(self):
+        return range(1, 56), "ABCDEFGH"
+    
+# New requirement: Method to print boarding passes
+# This method is built on the principle of "Tell! Don't Ask."
+# Notice that how the function below doesn't knwo anything about flights or aircrafts. It's very loosely coupled.
+def console_card_printer(passanger, seat, flight_number, aircraft):
+    output = f"| Name: {passanger}"     \
+        f"  Flight: {flight_number}"    \
+        f"  Seat: {seat}"               \
+        f"  Aircraft: {aircraft}"       \
+        "   |"
+    banner = "+" + "-" * (len(output) - 2) + "+"
+    border = "|" + " " * (len(output) - 2) + "|"
+    lines = [banner, border, output, border, banner]
+    card = '\n'.join(lines)
+    print(card)
+    print()
+
+# Convenience method
+def make_flights():
+    flight1 = Flight('BA758', AirbusA319('G-EUPT'))
+    flight1.allocate_seat('12A', 'Guido van Rossum')
+    flight1.allocate_seat('15F', 'Bjarne Stroustrup')
+    flight1.allocate_seat('15E', 'Anders, Hajlsberg')
+    flight1.allocate_seat('1C', 'John McCarthy')
+    flight1.allocate_seat('1D', 'Rich Hickey')
+
+    flight2 = Flight('AF72', Boeing777('F-GSPS'))
+    flight2.allocate_seat('55G', 'Larry Wall')
+    flight2.allocate_seat('33G', 'Yukihiro Matsumoto')
+    flight2.allocate_seat('4B', 'Brian Kernihan')
+    flight2.allocate_seat('4A', 'Dennis Ritchie')
+
+    return flight1, flight2
+    
+
+# test input
+# from airtravel import *
+# aircraft1 = AirbusA319('G-EUPT')
+# aircraft2 = Boeing777('F-GSPS')
+# aircraft1.num_seats()
+# aircraft2.num_seats()
+# f, g = make_flights()
+# f.print_seating()
+# f.num_available_seats()
+# f.make_boarding_cards(console_card_printer)
