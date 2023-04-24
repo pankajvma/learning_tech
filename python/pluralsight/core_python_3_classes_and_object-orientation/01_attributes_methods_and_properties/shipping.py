@@ -36,7 +36,7 @@ class ShippingContainer:
     def __init__(self, owner_code, contents):
         self.owner_code = owner_code
         self.contents = contents
-        self.bic = ShippingContainer._make_bic_code(
+        self.bic = self._make_bic_code(     # it is necessary use 'self' here so that we can generate BIC code customized as per required by instance during ingeritance.
             owner_code=owner_code,
             serial=ShippingContainer._generate_serial()
         )
@@ -44,3 +44,14 @@ class ShippingContainer:
         # Note: Class attributes can be accessed with the self keyword however, it is not recommended because
         # Instance attrributes take precedence over class attrubutes when accessed through 'self', Also
         # Referring class attribute with self while assigning a new value will create a new instance attribute instead of modifying its value.
+
+
+class RefrigeratedShippingContainer(ShippingContainer):
+
+    @staticmethod
+    def _make_bic_code(owner_code, serial):
+        return iso6346.create(
+            owner_code=owner_code,
+            serial=str(serial).zfill(6),
+            category='R'
+        )
